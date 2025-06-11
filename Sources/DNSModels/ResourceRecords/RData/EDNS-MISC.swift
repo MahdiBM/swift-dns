@@ -95,6 +95,7 @@ extension EDNSCode {
 /// `note: Not all EdnsOptions are supported at this time.`
 ///
 /// <https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml#dns-parameters-13>
+@available(macOS 26.0, *)
 public enum EDNSOption: Sendable, Hashable {
     /// Used to specify the set of SupportedAlgorithms between a client and server
     public struct SupportedAlgorithms: Sendable, Hashable {
@@ -137,6 +138,7 @@ public enum EDNSOption: Sendable, Hashable {
     ///    as a signal to the software developer making the request to fix
     ///    their implementation.
     /// ```
+    @available(macOS 26.0, *)
     public struct ClientSubnet: Sendable, Hashable {
         public var address: IPAddress
         public var sourcePrefix: UInt8
@@ -157,6 +159,7 @@ public enum EDNSOption: Sendable, Hashable {
     case unknown(UInt16, [UInt8])
 }
 
+@available(macOS 26.0, *)
 extension EDNSOption {
     package init(from buffer: inout DNSBuffer, code: EDNSCode) throws {
         switch code {
@@ -171,6 +174,7 @@ extension EDNSOption {
     }
 }
 
+@available(macOS 26.0, *)
 extension EDNSOption {
     package func encode(into buffer: inout DNSBuffer) throws {
         switch self {
@@ -190,6 +194,7 @@ extension EDNSOption {
     }
 }
 
+@available(macOS 26.0, *)
 extension EDNSOption.ClientSubnet {
     var lengthForWireProtocol: UInt16 {
         // FAMILY: 2 bytes
@@ -204,6 +209,7 @@ extension EDNSOption.ClientSubnet {
     }
 }
 
+@available(macOS 26.0, *)
 extension EDNSOption.SupportedAlgorithms {
     mutating func insert(_ algorithm: DNSSECAlgorithmEDNSSubset) {
         self.rawValue |= 1 << algorithm.rawValue
@@ -214,6 +220,7 @@ extension EDNSOption.SupportedAlgorithms {
     }
 }
 
+@available(macOS 26.0, *)
 extension EDNSOption.SupportedAlgorithms {
     package init(from buffer: inout DNSBuffer) {
         self.init()
@@ -229,6 +236,7 @@ extension EDNSOption.SupportedAlgorithms {
     }
 }
 
+@available(macOS 26.0, *)
 extension EDNSOption.SupportedAlgorithms {
     public consuming func makeSequence() -> Sequence {
         Self.Sequence(base: self)
@@ -270,6 +278,7 @@ extension EDNSOption.SupportedAlgorithms {
     }
 }
 
+@available(macOS 26.0, *)
 extension EDNSOption.SupportedAlgorithms {
     package func encode(into buffer: inout DNSBuffer) -> UInt16 {
         var count: UInt16 = 0
@@ -281,6 +290,7 @@ extension EDNSOption.SupportedAlgorithms {
     }
 }
 
+@available(macOS 26.0, *)
 extension EDNSOption.ClientSubnet {
     package init(from buffer: inout DNSBuffer) throws {
         let family = try buffer.readInteger(as: UInt8.self).unwrap(
@@ -329,6 +339,7 @@ extension EDNSOption.ClientSubnet {
     }
 }
 
+@available(macOS 26.0, *)
 extension EDNSOption.ClientSubnet {
     package func encode(into buffer: inout DNSBuffer) throws {
         let addressLength = Self.addressLength(of: numericCast(self.sourcePrefix))

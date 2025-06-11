@@ -537,6 +537,7 @@ extension DNSSECRData {
 /// No init(from:). Read using `RData`
 
 extension DNSSECRData {
+    @available(macOS 10.15, *)
     package func encode(into buffer: inout DNSBuffer) throws {
         switch self {
         case .CDNSKEY(let cdnskey):

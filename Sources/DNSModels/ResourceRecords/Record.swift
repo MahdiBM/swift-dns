@@ -34,6 +34,7 @@
 ///     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 ///
 /// ```
+@available(macOS 26.0, *)
 public struct Record: Sendable {
     public var nameLabels: Name
     public var recordType: RecordType {
@@ -51,6 +52,7 @@ public struct Record: Sendable {
     }
 }
 
+@available(macOS 26.0, *)
 extension Record {
     package init(from buffer: inout DNSBuffer) throws {
         self.nameLabels = try Name(from: &buffer)
@@ -66,12 +68,14 @@ extension Record {
     }
 }
 
+@available(macOS 26.0, *)
 extension [Record] {
     package enum DecodingError: Error {
         case mustBeFinalResourceRecord(String)
         case multipleEDNSRecords
     }
 
+    @available(macOS 26.0, *)
     package static func from(
         buffer: inout DNSBuffer,
         count: UInt16,
@@ -131,6 +135,7 @@ extension [Record] {
     }
 }
 
+@available(macOS 26.0, *)
 extension Record {
     package func encode(into buffer: inout DNSBuffer) throws {
         try nameLabels.encode(into: &buffer)

@@ -1,6 +1,7 @@
 import DNSModels
 import NIOCore
 
+@available(macOS 26.0, *)
 struct DNSMessageDecoder: NIOSingleStepByteToMessageDecoder {
     typealias InboundOut = Message
 

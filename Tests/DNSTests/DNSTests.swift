@@ -4,6 +4,7 @@ import Testing
 
 @Suite
 struct DNSTests {
+    @available(macOS 26.0, *)
     @Test func encodeAExampleComQuery() async throws {
         let query = Query(
             name: try Name(string: "example.com"),
@@ -48,6 +49,7 @@ struct DNSTests {
         #expect(buffer == expected)
     }
 
+    @available(macOS 26.0, *)
     @Test func decodeAExampleComResponse() async throws {
         var buffer = Resources.dnsResponseAExampleComPacket.buffer()
         buffer.moveReaderIndex(forwardBy: 42)
@@ -127,6 +129,7 @@ struct DNSTests {
         #expect(option.1 == .unknown(11, []))
     }
 
+    @available(macOS 26.0, *)
     @Test func encodeAAAACloudflareComQuery() async throws {
         let query = Query(
             name: try Name(string: "cloudflare.com"),
@@ -171,6 +174,7 @@ struct DNSTests {
         #expect(buffer == expected)
     }
 
+    @available(macOS 26.0, *)
     @Test func decodeAAAACloudflareComResponse() async throws {
         var buffer = Resources.dnsResponseAAAACloudflareComPacket.buffer()
         buffer.moveReaderIndex(forwardBy: 42)
@@ -253,6 +257,7 @@ struct DNSTests {
         #expect(edns.options.options.count == 0)
     }
 
+    @available(macOS 26.0, *)
     @Test func encodeTXTExampleComQuery() async throws {
         let query = Query(
             name: try Name(string: "example.com"),
@@ -297,6 +302,7 @@ struct DNSTests {
         #expect(buffer == expected)
     }
 
+    @available(macOS 26.0, *)
     @Test func decodeTXTExampleComResponse() async throws {
         var buffer = Resources.dnsResponseTXTExampleComPacket.buffer()
         buffer.moveReaderIndex(forwardBy: 42)

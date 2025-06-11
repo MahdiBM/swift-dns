@@ -3,6 +3,7 @@ import DNSModels
 import Logging
 import NIOCore
 
+@available(macOS 26.0, *)
 final class DNSChannelHandler: ChannelDuplexHandler {
     typealias InboundIn = ByteBuffer
     typealias InboundOut = Never

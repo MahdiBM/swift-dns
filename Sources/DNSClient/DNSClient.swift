@@ -7,6 +7,7 @@ import NIOPosix
 
 public import struct DNSModels.Message
 
+@available(macOS 26, *)
 public struct DNSClient {
     public var connectionTarget: ConnectionTarget
     let eventLoopGroup: any EventLoopGroup

@@ -163,6 +163,7 @@ public struct NSEC3: Sendable {
     }
 
     /// Labels are always stored as ASCII, unicode characters must be encoded with punycode
+    @available(macOS 26.0, *)
     public struct Label: Sendable {
         public var value: InlineArray<24, UInt8>
 

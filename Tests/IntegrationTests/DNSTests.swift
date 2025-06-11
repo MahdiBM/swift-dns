@@ -6,6 +6,7 @@ import Testing
 
 @Suite
 struct DNSTests {
+    @available(macOS 26, *)
     @Test func queryA() async throws {
         let client = DNSClient(
             connectionTarget: .domain(name: "8.8.4.4", port: 53),
@@ -121,6 +122,7 @@ struct DNSTests {
         /// edns.options.options is whatever
     }
 
+    @available(macOS 26.0, *)
     @Test func queryAAAA() async throws {
         let client = DNSClient(
             connectionTarget: .domain(name: "8.8.4.4", port: 53),
@@ -272,6 +274,7 @@ struct DNSTests {
 
     @Test func queryTLSA() async throws {}
 
+    @available(macOS 26.0, *)
     @Test func queryTXT() async throws {
         let client = DNSClient(
             connectionTarget: .domain(name: "8.8.4.4", port: 53),

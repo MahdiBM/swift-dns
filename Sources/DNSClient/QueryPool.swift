@@ -2,6 +2,7 @@ import DNSModels
 import Synchronization
 
 /// Protected by Mutex
+@available(macOS 26, *)
 final class QueryPool: @unchecked Sendable {
     typealias Continuation = CheckedContinuation<Message, any Error>
     private let queries: Mutex<[UInt16: Continuation]> = .init([:])

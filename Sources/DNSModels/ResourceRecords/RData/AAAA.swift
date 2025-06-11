@@ -1,4 +1,5 @@
 /// The DNS AAAA record type, an IPv6 address
+@available(macOS 26.0, *)
 public struct AAAA: Sendable {
     public var value: IPv6Address
 
@@ -7,12 +8,14 @@ public struct AAAA: Sendable {
     }
 }
 
+@available(macOS 26.0, *)
 extension AAAA {
     package init(from buffer: inout DNSBuffer) throws {
         self.value = try IPv6Address(from: &buffer)
     }
 }
 
+@available(macOS 26.0, *)
 extension AAAA {
     package func encode(into buffer: inout DNSBuffer) {
         value.encode(into: &buffer)
