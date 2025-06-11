@@ -21,6 +21,7 @@
 ///     decimal numbers separated by dots without any imbedded spaces (e.g.,
 ///     "10.2.0.52" or "192.0.5.6").
 /// ```
+@available(macOS 26.0, *)
 public struct A: Sendable {
     public var value: IPv4Address
 
@@ -29,12 +30,14 @@ public struct A: Sendable {
     }
 }
 
+@available(macOS 26.0, *)
 extension A {
     package init(from buffer: inout DNSBuffer) throws {
         self.value = try IPv4Address(from: &buffer)
     }
 }
 
+@available(macOS 26.0, *)
 extension A {
     package func encode(into buffer: inout DNSBuffer) {
         self.value.encode(into: &buffer)

@@ -224,6 +224,7 @@ extension TSIG {
 }
 
 extension TSIG {
+    @available(macOS 10.15, *)
     package func encode(into buffer: inout DNSBuffer) throws {
         try self.algorithm.encode(into: &buffer)
         /// FIXME: Is this check needed, with `init(exactly:)`?
@@ -270,6 +271,7 @@ extension TSIG.Algorithm {
             }
     }
 
+    @available(macOS 10.15, *)
     func toName() throws -> Name {
         switch self {
         case .HMAC_MD5: return try Name(string: "HMAC-MD5.SIG-ALG.REG.INT")
@@ -293,6 +295,7 @@ extension TSIG.Algorithm {
     }
 }
 
+@available(macOS 10.15, *)
 extension TSIG.Algorithm {
     func encode(into buffer: inout DNSBuffer) throws {
         try self.toName().encode(into: &buffer)

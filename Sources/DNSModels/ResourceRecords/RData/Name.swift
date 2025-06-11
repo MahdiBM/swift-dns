@@ -135,10 +135,12 @@ extension Name {
         case escape3(UInt8, UInt8)
     }
 
+    @available(macOS 10.15, *)
     public init(string: some StringProtocol, origin: Self? = nil) throws {
         try self.init(bytes: string.utf8, origin: origin)
     }
 
+    @available(macOS 10.15, *)
     public init(bytes: some Collection<UInt8>, origin: Self? = nil) throws {
         self.init()
         // short circuit root parse

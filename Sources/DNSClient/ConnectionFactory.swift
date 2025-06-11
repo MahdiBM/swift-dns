@@ -2,6 +2,7 @@ import Logging
 import NIOCore
 import NIOPosix
 
+@available(macOS 26, *)
 struct ConnectionFactory {
     let queryPool: QueryPool
     let socketAddress: SocketAddress

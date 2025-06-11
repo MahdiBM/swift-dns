@@ -1,5 +1,10 @@
 import DNSModels
+#if canImport(FoundationEssentials)
 import FoundationEssentials
+#else
+/// We're in tests so importing full foundation is fine
+import Foundation
+#endif
 
 enum Resources: String {
     case dnsQueryAExampleComPacket = "example.com-a-query-packet"
@@ -13,7 +18,7 @@ enum Resources: String {
         DNSBuffer(bytes: Resources.data(at: self.rawValue))
     }
 
-    private static let fm = FileManager.default
+    private static nonisolated(unsafe) let fm = FileManager.default
 
     private static func data(at relativePath: String) -> Data {
         let dropCount = "DNSTests/Resources.swift".count

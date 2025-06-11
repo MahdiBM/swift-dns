@@ -75,6 +75,7 @@ public struct CAA: Sendable {
 }
 
 extension CAA {
+    @available(macOS 10.15, *)
     package init(from buffer: inout DNSBuffer) throws {
         /// TODO: move flags to how Bytes16To31 handles flags
         let flags = try buffer.readInteger(as: UInt8.self).unwrap(
@@ -161,6 +162,7 @@ extension CAA.Property {
 }
 
 extension CAA.Value {
+    @available(macOS 10.15, *)
     package init(from buffer: inout DNSBuffer, tag: CAA.Property) throws {
         switch tag {
         case .issue, .issueWildcard:
@@ -204,6 +206,8 @@ extension CAA.Value {
         }
     }
 
+
+    @available(macOS 10.15, *)
     static func readIssuer(
         from buffer: inout DNSBuffer
     ) throws -> (Name?, [(key: String, value: String)]) {
