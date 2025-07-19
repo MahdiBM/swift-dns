@@ -1,8 +1,22 @@
 {
-  "throughput": {
-    "base": 4585432,
-    "max": 5007245,
-    "min": 4163619,
-    "tolerancePercentage": 9.2
+  "cpuSystem": 0,
+  "cpuTotal": {
+    "base": 360019647,
+    "max": 390000000,
+    "min": 330039295,
+    "tolerancePercentage": 8.33
+  },
+  "cpuUser": {
+    "base": 360019647,
+    "max": 390000000,
+    "min": 330039295,
+    "tolerancePercentage": 8.33
+  },
+  "throughput": 3,
+  "wallClock": {
+    "base": 361059411,
+    "max": 389458088,
+    "min": 332660735,
+    "tolerancePercentage": 7.87
   }
 }
