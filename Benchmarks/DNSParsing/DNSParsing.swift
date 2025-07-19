@@ -3,7 +3,6 @@ import DNSModels
 import NIOCore
 
 let benchmarks: @Sendable () -> Void = {
-    Benchmark.defaultConfiguration.units = [.throughput: .kilo]
     Benchmark.defaultConfiguration.maxDuration = .seconds(5)
 
     var buffer = DNSBuffer()
@@ -27,6 +26,27 @@ let benchmarks: @Sendable () -> Void = {
         benchmark.startMeasurement()
         let message = try Message(from: &buffer)
         blackHole(message)
+    }
+
+    Benchmark(
+        "A_Response_CPU",
+        configuration: .init(
+            metrics: [.cpuUser, .cpuTotal, .cpuSystem, .wallClock],
+            warmupIterations: 1,
+            maxIterations: 10_000_000,
+            setup: {
+                buffer = Resources.dnsResponseAExampleComPacket.buffer()
+                buffer.moveReaderIndex(forwardBy: 42)
+                buffer.moveDNSPortionStartIndex(forwardBy: 42)
+                startIndex = buffer.readerIndex
+            }
+        )
+    ) { benchmark in
+        for _ in 0..<150_000 {
+            buffer.moveReaderIndex(to: startIndex)
+            let message = try Message(from: &buffer)
+            blackHole(message)
+        }
     }
 
     Benchmark(
@@ -84,6 +104,27 @@ let benchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
+        "AAAA_Response_CPU",
+        configuration: .init(
+            metrics: [.cpuUser, .cpuTotal, .cpuSystem, .wallClock],
+            warmupIterations: 1,
+            maxIterations: 10_000_000,
+            setup: {
+                buffer = Resources.dnsResponseAAAACloudflareComPacket.buffer()
+                buffer.moveReaderIndex(forwardBy: 42)
+                buffer.moveDNSPortionStartIndex(forwardBy: 42)
+                startIndex = buffer.readerIndex
+            }
+        )
+    ) { benchmark in
+        for _ in 0..<350_000 {
+            buffer.moveReaderIndex(to: startIndex)
+            let message = try Message(from: &buffer)
+            blackHole(message)
+        }
+    }
+
+    Benchmark(
         "AAAA_Response_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
@@ -118,6 +159,27 @@ let benchmarks: @Sendable () -> Void = {
         benchmark.startMeasurement()
         let message = try Message(from: &buffer)
         blackHole(message)
+    }
+
+    Benchmark(
+        "TXT_Response_CPU",
+        configuration: .init(
+            metrics: [.cpuUser, .cpuTotal, .cpuSystem, .wallClock],
+            warmupIterations: 1,
+            maxIterations: 10_000_000,
+            setup: {
+                buffer = Resources.dnsResponseTXTExampleComPacket.buffer()
+                buffer.moveReaderIndex(forwardBy: 42)
+                buffer.moveDNSPortionStartIndex(forwardBy: 42)
+                startIndex = buffer.readerIndex
+            }
+        )
+    ) { benchmark in
+        for _ in 0..<300_000 {
+            buffer.moveReaderIndex(to: startIndex)
+            let message = try Message(from: &buffer)
+            blackHole(message)
+        }
     }
 
     Benchmark(
