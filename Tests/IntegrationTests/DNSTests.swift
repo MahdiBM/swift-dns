@@ -4,14 +4,10 @@ import Logging
 import NIOPosix
 import Testing
 
-@Suite(.serialized)
+@Suite(.serialized, .withDNSClient)
 struct DNSTests {
     @Test func queryA() async throws {
-        let client = DNSClient(
-            connectionTarget: .domain(name: "8.8.4.4", port: 53),
-            eventLoopGroup: MultiThreadedEventLoopGroup.singleton,
-            logger: Logger(label: "DNSTests")
-        )
+        let client = DNSClientTrait.current!
 
         let factory = try MessageFactory<A>.forQuery(name: "example.com.")
         let message = factory.message
@@ -81,11 +77,7 @@ struct DNSTests {
     }
 
     @Test func queryAAAA() async throws {
-        let client = DNSClient(
-            connectionTarget: .domain(name: "8.8.4.4", port: 53),
-            eventLoopGroup: MultiThreadedEventLoopGroup.singleton,
-            logger: Logger(label: "DNSTests")
-        )
+        let client = DNSClientTrait.current!
 
         let factory = try MessageFactory<AAAA>.forQuery(name: "cloudflare.com.")
         let message = factory.message
@@ -155,11 +147,7 @@ struct DNSTests {
     }
 
     @Test func queryCAA() async throws {
-        let client = DNSClient(
-            connectionTarget: .domain(name: "8.8.4.4", port: 53),
-            eventLoopGroup: MultiThreadedEventLoopGroup.singleton,
-            logger: Logger(label: "DNSTests")
-        )
+        let client = DNSClientTrait.current!
 
         let factory = try MessageFactory<CAA>.forQuery(name: "cloudflare.com.")
         let message = factory.message
@@ -224,11 +212,7 @@ struct DNSTests {
     }
 
     @Test func queryCERT() async throws {
-        let client = DNSClient(
-            connectionTarget: .domain(name: "8.8.4.4", port: 53),
-            eventLoopGroup: MultiThreadedEventLoopGroup.singleton,
-            logger: Logger(label: "DNSTests")
-        )
+        let client = DNSClientTrait.current!
 
         let factory = try MessageFactory<CERT>.forQuery(name: "for-dns-cert-testing.mahdibm.com.")
         let message = factory.message
@@ -310,11 +294,7 @@ struct DNSTests {
     }
 
     @Test func queryCNAMEWwwGithubCom() async throws {
-        let client = DNSClient(
-            connectionTarget: .domain(name: "8.8.4.4", port: 53),
-            eventLoopGroup: MultiThreadedEventLoopGroup.singleton,
-            logger: Logger(label: "DNSTests")
-        )
+        let client = DNSClientTrait.current!
 
         let factory = try MessageFactory<CNAME>.forQuery(name: "www.github.com.")
         let message = factory.message
@@ -368,11 +348,7 @@ struct DNSTests {
     }
 
     @Test func queryCNAMERawGithubusercontentCom() async throws {
-        let client = DNSClient(
-            connectionTarget: .domain(name: "8.8.4.4", port: 53),
-            eventLoopGroup: MultiThreadedEventLoopGroup.singleton,
-            logger: Logger(label: "DNSTests")
-        )
+        let client = DNSClientTrait.current!
 
         let factory = try MessageFactory<CNAME>.forQuery(name: "raw.githubusercontent.com.")
         let message = factory.message
@@ -437,11 +413,7 @@ struct DNSTests {
     }
 
     @Test func queryMX() async throws {
-        let client = DNSClient(
-            connectionTarget: .domain(name: "8.8.4.4", port: 53),
-            eventLoopGroup: MultiThreadedEventLoopGroup.singleton,
-            logger: Logger(label: "DNSTests")
-        )
+        let client = DNSClientTrait.current!
 
         let factory = try MessageFactory<MX>.forQuery(name: "mahdibm.com.")
         let message = factory.message
@@ -514,11 +486,7 @@ struct DNSTests {
     @Test func queryNAPTR() async throws {}
 
     @Test func queryNS() async throws {
-        let client = DNSClient(
-            connectionTarget: .domain(name: "8.8.4.4", port: 53),
-            eventLoopGroup: MultiThreadedEventLoopGroup.singleton,
-            logger: Logger(label: "DNSTests")
-        )
+        let client = DNSClientTrait.current!
 
         let factory = try MessageFactory<NS>.forQuery(name: "apple.com.")
         let message = factory.message
@@ -598,11 +566,7 @@ struct DNSTests {
     @Test func queryOPT() async throws {}
 
     @Test func queryPTR() async throws {
-        let client = DNSClient(
-            connectionTarget: .domain(name: "8.8.4.4", port: 53),
-            eventLoopGroup: MultiThreadedEventLoopGroup.singleton,
-            logger: Logger(label: "DNSTests")
-        )
+        let client = DNSClientTrait.current!
 
         let factory = try MessageFactory<PTR>.forQuery(name: "9.9.9.9.in-addr.arpa.")
         let message = factory.message
@@ -681,11 +645,7 @@ struct DNSTests {
     @Test func queryTLSA() async throws {}
 
     @Test func queryTXT() async throws {
-        let client = DNSClient(
-            connectionTarget: .domain(name: "8.8.4.4", port: 53),
-            eventLoopGroup: MultiThreadedEventLoopGroup.singleton,
-            logger: Logger(label: "DNSTests")
-        )
+        let client = DNSClientTrait.current!
 
         let factory = try MessageFactory<TXT>.forQuery(name: "example.com.")
         let message = factory.message
