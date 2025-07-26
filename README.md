@@ -49,23 +49,39 @@ import DNSModels
 
 /// Create a `DNSClient`
 let client = DNSClient(
-    connectionTarget: .domain(name: "8.8.4.4", port: 53),
+    serverAddress: .domain(name: "8.8.4.4", port: 53),
     logger: Logger(label: "DNSTests")
 )
 
 /// Send the query
+/// `response` will be of type `Message`
 let response = try await client.queryA(
-    message: .forQuery(name: "example.com"),
+    message: .forQuery(name: "mahdibm.com"),
     options: .edns
-) /// type of value is `Message`
+)
 
 /// Read the answers
 for answer in response.answers {
-    let a = try answer.rdata /// type of value is `A`
-    let ipv4 = a.value /// type of value is `IPv4Address`
+    /// `a` will be of type `A`
+    let a = try answer.rdata
+    /// `ipv4` will be of type `IPv4Address`
+    let ipv4 = a.value
     print("Got ipv4 \(ipv4) for domain \(response.queries.first?.name.description ?? "n/a")")
 }
 ```
+
+You can also explicitly specify a `channelKind` if you so desire:
+
+```swift
+/// Send the query
+let response = try await client.queryA(
+    message: .forQuery(name: "mahdibm.com"),
+    options: .edns,
+    channelKind: .tcp
+)
+```
+
+Default `channelKind` is `.udp`. Currently `.tcp` is also supported.
 
 ## Checklist
 
@@ -73,10 +89,11 @@ for answer in response.answers {
   - [x] IDNA support for non-ASCII domain names.
 - [x] DNS client
   - [x] DNS over UDP
-  - [ ] DNS over TCP
+  - [x] DNS over TCP
   - [ ] DoT (DNS Over TLS)
   - [ ] DoH (DNS Over HTTPS)
   - [ ] DoQ (DNS Over Quic)
+  - [ ] MDNS
 - [ ] DNS resolver (DNS client but with caching etc...)
 - [ ] DNS server
 - [ ] DNSSEC
@@ -87,3 +104,5 @@ for answer in response.answers {
   - The networking library used to implement this library.
 - https://github.com/hickory-dns/hickory-dns
   - Some data type / parsing implementations were heavily inspired by hickory-dns.
+- https://github.com/valkey-io/valkey-swift
+  - Helped a lot in putting an initial version of the connection handling together.
