@@ -309,6 +309,7 @@ extension Name {
         // pointer: (slice == 1100 0000 aka C0) & C0 == true, then 03FF & slice = offset
         // label: 03FF & slice = length slice.next(length) = label
         // root: 0000
+        var firstLabel = true
         loop: while true {
             switch consume state {
             case .labelLengthOrPointer:
@@ -337,9 +338,17 @@ extension Name {
                     case 0b0000_0000:
                         state = .label
 
-                        if let knownLength = knownLength,
-                            knownLength <= UInt8.max
+                        if firstLabel,
+                            let knownLength = knownLength,
+                            knownLength <= UInt8.max,
+                            knownLength > 0/// At least a null byte needs to be present
                         {
+                            /// We only use firstLabel here, so we set it only here as well.
+                            /// If we want to use it for other stuff in the future, we need to make
+                            /// sure we consistently set firstLabel to false even when knownLength is
+                            /// nil or is not valid.
+                            firstLabel = false
+
                             /// Excluding the null byte, we have `knownLength - 1` bytes that are either
                             /// <character-string>s which is to say they are either a length-byte or the
                             /// actual label bytes. Worst case we have `(knownLength - 1) / 2` label bytes.
@@ -350,12 +359,13 @@ extension Name {
                             /// the weighted-average ratio of label-bytes to domain-length is 0.915,
                             /// and the weighted-average ratio of labels to domain-length is 0.165.
                             /// so we reserve the bytes below based on those ratios.
-                            let labelBytesGuess = Int(knownLength) * 92 / 100
+                            let knownLengthNoNullByte = knownLength - 1
+                            let labelBytesGuess = Int(knownLengthNoNullByte) * 92 / 100
                             let maxPossibleLabelBytes = Int(UInt8.max - 1)
                             self.data.reserveCapacity(
                                 Swift.max(Swift.min(labelBytesGuess, maxPossibleLabelBytes), 2)
                             )
-                            let borderCountGuess = Int(knownLength) * 17 / 100
+                            let borderCountGuess = Int(knownLengthNoNullByte) * 17 / 100
                             let maxPossibleBorderCount = Int(UInt8.max / 2)
                             self.borders.reserveCapacity(
                                 Swift.max(Swift.min(borderCountGuess, maxPossibleBorderCount), 2)
@@ -365,6 +375,7 @@ extension Name {
                             /// the weighted-average number of label-bytes per domain is 12.75.
                             /// We reserve 8 bytes not to explode in memory usage.
                             /// Also the weighted-average number of labels per domain is 2.07, so we reserve 4 bytes.
+                            /// Apparently array will reserve 16 bytes anyway (at least on a 64-bit macOS) for anything less.
                             self.data.reserveCapacity(8)
                             self.borders.reserveCapacity(4)
                         }
