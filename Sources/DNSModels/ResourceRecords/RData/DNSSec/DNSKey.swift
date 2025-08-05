@@ -1,5 +1,3 @@
-public import struct NIOCore.ByteBuffer
-
 /// [RFC 4034](https://tools.ietf.org/html/rfc4034#section-2), DNSSEC Resource Records, March 2005
 ///
 /// ```text
@@ -50,9 +48,9 @@ public struct DNSKEY: Sendable {
     /// An owned variant of PublicKey
     public struct PublicKey: Sendable {
         public var algorithm: DNSSECAlgorithm
-        public var key: ByteBuffer
+        public var key: [UInt8]
 
-        public init(algorithm: DNSSECAlgorithm, key: ByteBuffer) {
+        public init(algorithm: DNSSECAlgorithm, key: [UInt8]) {
             self.algorithm = algorithm
             self.key = key
         }
@@ -98,7 +96,7 @@ extension DNSKEY.PublicKey {
 extension DNSKEY.PublicKey {
     package func encode(into buffer: inout DNSBuffer) {
         self.algorithm.encode(into: &buffer)
-        buffer.writeBuffer(self.key)
+        buffer.writeBytes(self.key)
     }
 }
 

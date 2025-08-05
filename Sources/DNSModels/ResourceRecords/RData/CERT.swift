@@ -1,5 +1,3 @@
-public import struct NIOCore.ByteBuffer
-
 /// [RFC 4398, Storing Certificates in DNS, November 1987](https://tools.ietf.org/html/rfc4398)
 ///
 /// ```text
@@ -78,9 +76,9 @@ public struct CERT: Sendable {
     public var certType: CertType
     public var keyTag: UInt16
     public var algorithm: Algorithm
-    public var certData: ByteBuffer
+    public var certData: [UInt8]
 
-    public init(certType: CertType, keyTag: UInt16, algorithm: Algorithm, certData: ByteBuffer) {
+    public init(certType: CertType, keyTag: UInt16, algorithm: Algorithm, certData: [UInt8]) {
         self.certType = certType
         self.keyTag = keyTag
         self.algorithm = algorithm

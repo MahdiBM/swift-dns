@@ -1,5 +1,3 @@
-public import struct NIOCore.ByteBuffer
-
 /// [RFC 5155](https://tools.ietf.org/html/rfc5155#section-3), NSEC3, March 2008
 ///
 /// ```text
@@ -168,9 +166,9 @@ public struct NSEC3: Sendable {
     @available(swiftDNSApplePlatforms 26, *)
     public struct Label: Sendable {
         /// FXIME: Use TinyArray or something
-        public var value: ByteBuffer
+        public var value: [UInt8]
 
-        public init(value: ByteBuffer) {
+        public init(value: [UInt8]) {
             self.value = value
         }
     }
@@ -178,8 +176,8 @@ public struct NSEC3: Sendable {
     public var hashAlgorithm: HashAlgorithm
     public var optOut: Bool
     public var iterations: UInt16
-    public var salt: ByteBuffer
-    public var nextHashedOwnerName: ByteBuffer
+    public var salt: [UInt8]
+    public var nextHashedOwnerName: [UInt8]
     /// Don't need this yet
     /// public var nextHashedOwnerNameBase32: Label?
     public var typeBitMaps: RecordTypeSet
@@ -196,8 +194,8 @@ public struct NSEC3: Sendable {
         hashAlgorithm: HashAlgorithm,
         optOut: Bool,
         iterations: UInt16,
-        salt: ByteBuffer,
-        nextHashedOwnerName: ByteBuffer,
+        salt: [UInt8],
+        nextHashedOwnerName: [UInt8],
         typeBitMaps: RecordTypeSet
     ) {
         self.hashAlgorithm = hashAlgorithm
@@ -223,8 +221,8 @@ extension NSEC3 {
         self.iterations = try buffer.readInteger(as: UInt16.self).unwrap(
             or: .failedToRead("NSEC3.iterations", buffer)
         )
-        self.salt = try buffer.readLengthPrefixedStringByteBuffer(name: "NSEC3.salt")
-        self.nextHashedOwnerName = try buffer.readLengthPrefixedStringByteBuffer(
+        self.salt = try buffer.readLengthPrefixedString(name: "NSEC3.salt")
+        self.nextHashedOwnerName = try buffer.readLengthPrefixedString(
             name: "NSEC3.nextHashedOwnerName"
         )
         self.typeBitMaps = try RecordTypeSet(from: &buffer)

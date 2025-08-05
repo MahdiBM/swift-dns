@@ -1,5 +1,3 @@
-public import struct NIOCore.ByteBuffer
-
 /// [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035)
 ///
 /// ```text
@@ -18,16 +16,16 @@ public import struct NIOCore.ByteBuffer
 /// experimental extensions of the DNS.
 /// ```
 public struct NULL: Sendable {
-    public var anything: ByteBuffer
+    public var anything: [UInt8]
 
-    public init(anything: ByteBuffer) {
+    public init(anything: [UInt8]) {
         self.anything = anything
     }
 }
 
 extension NULL {
     package init(from buffer: inout DNSBuffer) throws {
-        self.anything = try buffer.readLengthPrefixedStringByteBuffer(
+        self.anything = try buffer.readLengthPrefixedString(
             name: "NULL.anything",
             decodeLengthAs: UInt16.self
         )

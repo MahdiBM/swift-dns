@@ -1,5 +1,3 @@
-public import struct NIOCore.ByteBuffer
-
 /// The CAA RR Type
 ///
 /// [RFC 8659, DNS Certification Authority Authorization, November 2019](https://www.rfc-editor.org/rfc/rfc8659)
@@ -44,7 +42,7 @@ public struct CAA: Sendable, Equatable {
         /// Url to which to send CA errors
         case url(String)
         /// Uninterpreted data, either for a tag that is not known, or an invalid value
-        case unknown(ByteBuffer)
+        case unknown([UInt8])
 
         public static func == (lhs: Self, rhs: Self) -> Bool {
             switch (lhs, rhs) {
@@ -66,7 +64,7 @@ public struct CAA: Sendable, Equatable {
     public var reservedFlags: UInt8
     public var tag: Property
     public var value: Value
-    public var rawValue: ByteBuffer
+    public var rawValue: [UInt8]
 
     var flags: UInt8 {
         var flags = self.reservedFlags & 0b0111_1111
@@ -81,7 +79,7 @@ public struct CAA: Sendable, Equatable {
         reservedFlags: UInt8,
         tag: Property,
         value: Value,
-        rawValue: ByteBuffer
+        rawValue: [UInt8]
     ) {
         self.issuerCritical = issuerCritical
         self.reservedFlags = reservedFlags
@@ -111,7 +109,7 @@ extension CAA {
         buffer.writeInteger(self.flags)
         var tagBuffer = DNSBuffer()
         self.tag.encode(into: &tagBuffer)
-        buffer.writeBuffer(self.rawValue)
+        buffer.writeBytes(self.rawValue)
     }
 }
 

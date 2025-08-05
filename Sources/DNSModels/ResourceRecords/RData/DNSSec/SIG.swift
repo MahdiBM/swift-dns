@@ -1,5 +1,3 @@
-public import struct NIOCore.ByteBuffer
-
 /// [RFC 2535](https://tools.ietf.org/html/rfc2535#section-4), Domain Name System Security Extensions, March 1999
 ///
 /// NOTE: RFC 2535 was obsoleted with 4034+, with the exception of the
@@ -167,7 +165,7 @@ public struct SIG: Sendable {
     public var sigInception: UInt32
     public var keyTag: UInt16
     public var signerName: Name
-    public var sig: ByteBuffer
+    public var sig: [UInt8]
 
     public init(
         typeCovered: RecordType,
@@ -178,7 +176,7 @@ public struct SIG: Sendable {
         sigInception: UInt32,
         keyTag: UInt16,
         signerName: Name,
-        sig: ByteBuffer
+        sig: [UInt8]
     ) {
         self.typeCovered = typeCovered
         self.algorithm = algorithm
@@ -226,7 +224,7 @@ extension SIG {
         buffer.writeInteger(keyTag)
         // a `Name` is always ASCII lowercased anyway so no need to worry about that.
         try signerName.encode(into: &buffer)
-        buffer.writeBuffer(sig)
+        buffer.writeBytes(sig)
     }
 }
 

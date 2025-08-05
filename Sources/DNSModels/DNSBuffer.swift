@@ -207,11 +207,11 @@ package struct DNSBuffer: Sendable {
     }
 
     /// Returns the remaining bytes in the buffer and moves the reader index.
-    package mutating func readToEnd() -> ByteBuffer {
+    package mutating func readToEnd() -> [UInt8] {
         defer {
             self._buffer.moveReaderIndex(forwardBy: self._buffer.readableBytes)
         }
-        return self._buffer
+        return [UInt8](buffer: self._buffer)
     }
 
     /// Returns the remaining bytes in the buffer as a String and moves the reader index.
@@ -223,8 +223,8 @@ package struct DNSBuffer: Sendable {
     }
 
     /// Returns a copy of the remaining bytes in the buffer.
-    package mutating func getToEnd() -> ByteBuffer {
-        self._buffer
+    package mutating func getToEnd() -> [UInt8] {
+        [UInt8](buffer: self._buffer)
     }
 
     @available(swiftDNSApplePlatforms 26, *)
@@ -234,11 +234,7 @@ package struct DNSBuffer: Sendable {
         self._buffer.writeBytes(bytes.span.bytes)
     }
 
-    package mutating func writeBuffer(_ buffer: ByteBuffer) {
-        self._buffer.writeImmutableBuffer(buffer)
-    }
-
-    package mutating func writeBytes(_ bytes: some Collection<UInt8>) {
+    package mutating func writeBytes(_ bytes: some Sequence<UInt8>) {
         self._buffer.writeBytes(bytes)
     }
 
@@ -246,8 +242,8 @@ package struct DNSBuffer: Sendable {
         self._buffer.writeBuffer(&buffer._buffer)
     }
 
-    package mutating func readByteBuffer(length: Int) -> ByteBuffer? {
-        self._buffer.readSlice(length: length)
+    package mutating func readBytes(length: Int) -> [UInt8]? {
+        self._buffer.readBytes(length: length)
     }
 
     /// [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.3)
@@ -259,28 +255,29 @@ package struct DNSBuffer: Sendable {
     /// length (including the length octet).
     /// ```
     /// The spec's <character-string> is a specialized version of this function where `LengthType == UInt8`.
-    package mutating func readLengthPrefixedStringByteBuffer<IntegerType: FixedWidthInteger>(
+    package mutating func readLengthPrefixedString<IntegerType: FixedWidthInteger>(
         name: StaticString,
         decodeLengthAs _: IntegerType.Type = UInt8.self
-    ) throws -> ByteBuffer {
+    ) throws -> [UInt8] {
         assert(
             IntegerType.max <= Int.max,
             /// ByteBuffer can't fit more than UInt32 bytes anyway.
             "This function assumes the length will fit into an Int."
         )
         guard let length = self.readInteger(as: IntegerType.self),
-            let buffer = self._buffer.readSlice(length: Int(length))
+            let bytes = self.readBytes(length: Int(length))
         else {
             throw ProtocolError.failedToRead(name, self)
         }
-        return buffer
+        return bytes
     }
 
-    package mutating func readLengthPrefixedStringByteBuffer<IntegerType: FixedWidthInteger>(
+    package mutating func readLengthPrefixedString<IntegerType: FixedWidthInteger>(
         name: StaticString,
         decodeLengthAs _: IntegerType.Type = UInt8.self,
+        into bytes: inout [UInt8],
         performLengthCheck: (IntegerType, DNSBuffer) throws -> Void
-    ) throws -> ByteBuffer {
+    ) throws {
         assert(
             IntegerType.max <= Int.max,
             /// ByteBuffer can't fit more than UInt32 bytes anyway.
@@ -292,10 +289,27 @@ package struct DNSBuffer: Sendable {
 
         try performLengthCheck(length, self)
 
-        guard let slice = self._buffer.readSlice(length: Int(length)) else {
+        let intLength = Int(length)
+        guard
+            let range = self.rangeWithinReadableBytes(
+                index: self.readerIndex,
+                length: intLength
+            )
+        else {
             throw ProtocolError.failedToRead(name, self)
         }
-        return slice
+
+        self._buffer.withUnsafeReadableBytes { ptr in
+            // this is not technically correct because we shouldn't just bind
+            // the memory to `UInt8` but it's not a real issue either and we
+            // need to work around https://bugs.swift.org/browse/SR-9604
+            bytes.append(
+                contentsOf: UnsafeRawBufferPointer(rebasing: ptr[range])
+                    .bindMemory(to: UInt8.self)
+            )
+        }
+
+        self.moveReaderIndex(forwardBy: intLength)
     }
 
     /// [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.3)
@@ -344,20 +358,27 @@ package struct DNSBuffer: Sendable {
         self.writeInteger(length)
         self.writeBytes(bytes)
     }
+}
 
-    /// The length of the string MUST fit into the provided integer type.
-    package mutating func writeLengthPrefixedString<IntegerType: FixedWidthInteger & Comparable>(
-        name: StaticString,
-        bytes: ByteBuffer,
-        maxLength: IntegerType,
-        fitLengthInto: IntegerType.Type
-    ) throws {
-        try self.writeLengthPrefixedString(
-            name: name,
-            bytes: bytes.readableBytesView,
-            maxLength: maxLength,
-            fitLengthInto: fitLengthInto
-        )
+extension DNSBuffer {
+    @inlinable
+    func rangeWithinReadableBytes(index: Int, length: Int) -> Range<Int>? {
+        guard index >= self.readerIndex && length >= 0 else {
+            return nil
+        }
+
+        // both these &-s are safe, they can't underflow because both left & right side are >= 0 (and index >= readerIndex)
+        let indexFromReaderIndex = index &- self.readerIndex
+        assert(indexFromReaderIndex >= 0)
+        guard indexFromReaderIndex <= self.readableBytes &- length else {
+            return nil
+        }
+
+        // safe, can't overflow, we checked it above.
+        let upperBound = indexFromReaderIndex &+ length
+
+        // uncheckedBounds is safe because `length` is >= 0, so the lower bound will always be lower/equal to upper
+        return Range<Int>(uncheckedBounds: (lower: indexFromReaderIndex, upper: upperBound))
     }
 }
 

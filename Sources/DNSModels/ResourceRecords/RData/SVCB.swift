@@ -1,5 +1,3 @@
-public import struct NIOCore.ByteBuffer
-
 ///  [RFC 9460 SVCB and HTTPS Resource Records, Nov 2023](https://datatracker.ietf.org/doc/html/rfc9460#section-2.2)
 ///
 /// ```text
@@ -363,9 +361,9 @@ public struct SVCB: Sendable {
         ///   sequences.
         /// ```
         public struct ECHConfigList: Sendable {
-            public var config: ByteBuffer
+            public var config: [UInt8]
 
-            public init(config: ByteBuffer) {
+            public init(config: [UInt8]) {
                 self.config = config
             }
         }
@@ -386,9 +384,9 @@ public struct SVCB: Sendable {
         ///   MUST NOT be repeated.
         /// ```
         public struct Unknown: Sendable {
-            public var data: ByteBuffer
+            public var data: [UInt8]
 
-            public init(data: ByteBuffer) {
+            public init(data: [UInt8]) {
                 self.data = data
             }
         }
@@ -763,14 +761,14 @@ extension SVCB.SVCParamValue.IPHint where IPType == AAAA {
 @available(swiftDNSApplePlatforms 26, *)
 extension SVCB.SVCParamValue.ECHConfigList {
     package func encode(into buffer: inout DNSBuffer) throws {
-        buffer.writeBuffer(self.config)
+        buffer.writeBytes(self.config)
     }
 }
 
 @available(swiftDNSApplePlatforms 26, *)
 extension SVCB.SVCParamValue.Unknown {
     package func encode(into buffer: inout DNSBuffer) throws {
-        buffer.writeBuffer(self.data)
+        buffer.writeBytes(self.data)
     }
 }
 
