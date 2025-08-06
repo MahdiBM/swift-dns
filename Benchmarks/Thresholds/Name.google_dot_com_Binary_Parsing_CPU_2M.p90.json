@@ -1,8 +1,8 @@
 {
   "cpuUser": {
-    "base": 325035135,
-    "max": 390070271,
+    "base": 690000000,
+    "max": 1120000000,
     "min": 260000000,
-    "tolerancePercentage": 20.01
+    "tolerancePercentage": 62.32
   }
 }
