@@ -279,7 +279,7 @@ package struct DNSBuffer: Sendable {
     package mutating func readLengthPrefixedString<IntegerType: FixedWidthInteger>(
         name: StaticString,
         decodeLengthAs _: IntegerType.Type = UInt8.self,
-        into bytes: inout [UInt8],
+        into bytes: inout [Name.Byte],
         performLengthCheck: (IntegerType, DNSBuffer) throws -> Void
     ) throws {
         assert(
@@ -304,13 +304,20 @@ package struct DNSBuffer: Sendable {
         }
 
         self._buffer.withUnsafeReadableBytes { ptr in
-            // this is not technically correct because we shouldn't just bind
+            bytes.reserveCapacity(intLength)
             // the memory to `UInt8` but it's not a real issue either and we
-            // need to work around https://bugs.swift.org/browse/SR-9604
-            bytes.append(
-                contentsOf: UnsafeRawBufferPointer(rebasing: ptr[range])
-                    .bindMemory(to: UInt8.self)
-            )
+            for idx in range {
+                bytes.append(
+                    Name.Byte(
+                        byte: ptr.load(
+                            fromByteOffset: idx,
+                            as: UInt8.self
+                        ),
+                        isBorder: false
+                    )
+                )
+            }
+            bytes[bytes.count - 1].isBorder = true
         }
 
         self.moveReaderIndex(forwardBy: intLength)
