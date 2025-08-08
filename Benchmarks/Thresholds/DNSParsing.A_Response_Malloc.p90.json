@@ -1,3 +1,8 @@
 {
-  "mallocCountTotal": 17
+  "mallocCountTotal": {
+    "base": 13,
+    "max": 17,
+    "min": 10,
+    "tolerancePercentage": 25.93
+  }
 }
