@@ -113,7 +113,43 @@ extension Name {
     }
 }
 
+#if os(Windows)
+public import func ucrt.memcmp
+#elseif canImport(Darwin)
+public import func Darwin.memcmp
+#elseif canImport(Glibc)
+@preconcurrency public import func Glibc.memcmp
+#elseif canImport(Musl)
+@preconcurrency public import func Musl.memcmp
+#elseif canImport(Bionic)
+@preconcurrency public import func Bionic.memcmp
+#elseif canImport(WASILibc)
+@preconcurrency public import func WASILibc.memcmp
+#else
+#error("SwiftDNS/Name.swift was unable to identify your C library.")
+#endif
+
 extension Name: Hashable {
+    @inlinable
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        guard
+            lhs.isFQDN == rhs.isFQDN,
+            lhs.data.readableBytes == rhs.data.readableBytes
+        else {
+            return false
+        }
+
+        return lhs.data.withVeryUnsafeBytes { lPtr in
+            rhs.data.withVeryUnsafeBytes { rPtr in
+                memcmp(
+                    lPtr.baseAddress.unsafelyUnwrapped + lhs.data.readerIndex,
+                    rPtr.baseAddress.unsafelyUnwrapped + rhs.data.readerIndex,
+                    lhs.data.readableBytes
+                ) == 0
+            }
+        }
+    }
+
     /// Equality check without considering the FQDN flag.
     /// Users usually instantiate `Name` using a domain name which doesn't end in a dot.
     /// That mean user-instantiate `Name`s usually have `isFQDN` set to `false`.
