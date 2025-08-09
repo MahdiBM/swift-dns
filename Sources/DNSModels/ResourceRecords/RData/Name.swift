@@ -113,7 +113,42 @@ extension Name {
     }
 }
 
+#if os(Windows)
+import ucrt
+#elseif canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+@preconcurrency import Glibc
+#elseif canImport(Musl)
+@preconcurrency import Musl
+#elseif canImport(Bionic)
+@preconcurrency import Bionic
+#elseif canImport(WASILibc)
+@preconcurrency import WASILibc
+#else
+#error("The Byte Buffer module was unable to identify your C library.")
+#endif
+
 extension Name: Hashable {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        guard
+            lhs.isFQDN == rhs.isFQDN,
+            lhs.data.readableBytes == rhs.data.readableBytes
+        else {
+            return false
+        }
+
+        return lhs.data.withVeryUnsafeBytes { lPtr in
+            rhs.data.withVeryUnsafeBytes { rPtr in
+                memcmp(
+                    lPtr.baseAddress.unsafelyUnwrapped + lhs.data.readerIndex,
+                    rPtr.baseAddress.unsafelyUnwrapped + rhs.data.readerIndex,
+                    lPtr.count
+                ) == 0
+            }
+        }
+    }
+
     /// Equality check without considering the FQDN flag.
     /// Users usually instantiate `Name` using a domain name which doesn't end in a dot.
     /// That mean user-instantiate `Name`s usually have `isFQDN` set to `false`.
