@@ -16,22 +16,52 @@ extension Unicode.Scalar {
 
     @inlinable
     static var asciiDot: Unicode.Scalar {
-        Unicode.Scalar(0x2E).unsafelyUnwrapped
+        "."
     }
 
     @inlinable
     static var asciiColon: Unicode.Scalar {
-        Unicode.Scalar(0x3A).unsafelyUnwrapped
+        ":"
     }
 
     @inlinable
     static var asciiLeftSquareBracket: Unicode.Scalar {
-        Unicode.Scalar(0x5B).unsafelyUnwrapped
+        "["
     }
 
     @inlinable
     static var asciiRightSquareBracket: Unicode.Scalar {
-        Unicode.Scalar(0x5D).unsafelyUnwrapped
+        "]"
+    }
+
+    @inlinable
+    static var ascii0: Unicode.Scalar {
+        "0"
+    }
+
+    @inlinable
+    static var ascii9: Unicode.Scalar {
+        "9"
+    }
+
+    @inlinable
+    static var asciiLowercasedA: Unicode.Scalar {
+        "a"
+    }
+
+    @inlinable
+    static var asciiLowercasedF: Unicode.Scalar {
+        "f"
+    }
+
+    @inlinable
+    static var asciiUppercasedA: Unicode.Scalar {
+        "A"
+    }
+
+    @inlinable
+    static var asciiUppercasedF: Unicode.Scalar {
+        "F"
     }
 }
 

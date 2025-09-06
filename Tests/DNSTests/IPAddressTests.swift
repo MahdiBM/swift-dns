@@ -39,17 +39,9 @@ struct IPAddressTests {
             ("123.251.98.234", IPv4Address(123, 251, 98, 234)),
             ("255.255.255.255", IPv4Address(255, 255, 255, 255)),
             ("192.168.1.98", IPv4Address(192, 168, 1, 98)),
-            /// These all should work based on IDNA.
-            /// For example, the weird `1`s in the ip address below is:
-            /// 2081          ; mapped     ; 0031          # 1.1  SUBSCRIPT ONE
-            ("192.₁₆₈.₁.98", IPv4Address(192, 168, 1, 98)),
-            /// Other IDNA label separators other than U+002E ( . ) FULL STOP, are:
-            /// U+FF0E ( ． ) FULLWIDTH FULL STOP
-            /// U+3002 ( 。 ) IDEOGRAPHIC FULL STOP
-            /// U+FF61 ( ｡ ) HALFWIDTH IDEOGRAPHIC FULL STOP
-            ("192．168。1｡98", IPv4Address(192, 168, 1, 98)),
             ("192.168.1.256", nil),
             ("192.168.1.", nil),
+            ("1111.168.1.1", nil),
             ("192.168.1.2.3", nil),
             ("192.168.1", nil),
             (".168.1.123", nil),
@@ -62,6 +54,25 @@ struct IPAddressTests {
             ("9.87", nil),
             ("", nil),
             ("1111:2222:3333:4444:5555:6666:7777:8888", nil),
+            /// These all should work based on IDNA.
+            /// For example, the weird `1`s in the ip address below is:
+            /// 2081          ; mapped     ; 0031          # 1.1  SUBSCRIPT ONE
+            ///
+            /// IDNA label separators other than U+002E ( . ) FULL STOP, are:
+            /// U+FF0E ( ． ) FULLWIDTH FULL STOP
+            /// U+3002 ( 。 ) IDEOGRAPHIC FULL STOP
+            /// U+FF61 ( ｡ ) HALFWIDTH IDEOGRAPHIC FULL STOP
+            ///
+            /// Some ignored IDNA unicode scalars that are used below:
+            /// U+00AD ( ­ ) SOFT HYPHEN
+            /// U+200B ( ​ ) ZERO WIDTH SPACE
+            /// U+2064 ( ⁤ ) INVISIBLE PLUS
+            ///
+            /// Would parse to 192.168.1.98 assuming IDNA-compliant parsing
+            ("\u{AD}1\u{AD}92.₁₆\u{2064}\u{200B}\u{AD}₈.₁.98\u{AD}", nil),
+            /// Would parse to 192.168.1.98 assuming IDNA-compliant parsing
+            ("192．168。1｡\u{AD}98", nil),
+            ("192.\u{AD}.166.9", nil),
         ])
     )
     func ipv4AddressFromString(string: String, expectedAddress: IPv4Address?) {
@@ -215,16 +226,6 @@ struct IPAddressTests {
     @Test(
         arguments: [(String, UInt128?)]([
             ("1111:2222:3333:4444:5555:6666:7777:8888", 0x1111_2222_3333_4444_5555_6666_7777_8888),
-            /// Contains weird characters that are mapped to the correct characters in IDNA
-            (
-                "﹇₁₁₁₁:2222︓3333:4444︓5555:₆6₆6:7777:8888﹈",
-                0x1111_2222_3333_4444_5555_6666_7777_8888
-            ),
-            (
-                "﹇₂₀₀₁︓₀ⒹⒷ₈︓₈₅Ⓐ₃︓Ⓕ₁₀₉︓₁₉₇Ⓐ︓₈Ⓐ₂Ⓔ︓₀₃₇₀︓₇₃₃₄﹈",
-                0x2001_0DB8_85A3_F109_197A_8A2E_0370_7334
-            ),
-            ("₁₁₁₁:2222:3333:4444:5555:₆6₆6:7777:8888", 0x1111_2222_3333_4444_5555_6666_7777_8888),
             ("[FF::]", 0x00FF_0000_0000_0000_0000_0000_0000_0000),
             ("[0:FF::]", 0x0000_00FF_0000_0000_0000_0000_0000_0000),
             ("[2001:db8:85a3::100]", 0x2001_0DB8_85A3_0000_0000_0000_0000_0100),
@@ -272,6 +273,39 @@ struct IPAddressTests {
             ("[0:1:2:3:4:0:5:g]", nil),
             ("[0:11111:2:3:4:0:5:6]", nil),
             ("192.168.1.256", nil),
+            /// Contains weird characters that are mapped to the correct characters in IDNA
+            /// These all should work based on IDNA.
+            /// For example, the weird `1`s in the ip address below is:
+            /// 2081          ; mapped     ; 0031          # 1.1  SUBSCRIPT ONE
+            ///
+            /// Some ignored IDNA unicode scalars that are used below:
+            /// U+00AD ( ­ ) SOFT HYPHEN
+            /// U+200B ( ​ ) ZERO WIDTH SPACE
+            /// U+2064 ( ⁤ ) INVISIBLE PLUS
+            ///
+            /// Would parse to 1111:2222:3333:4444:5555:6666:7777:8888 assuming IDNA-compliant parsing
+            ("₁₁₁₁:2222:3333:4444:5555:₆6₆6:7777:8888", nil),
+            /// Would parse to 1111:2222:3333:4444:5555:6666:7777:8888 assuming IDNA-compliant parsing
+            (
+                "\u{AD}1\u{AD}111:2222︓\u{AD}3333:4444︓55\u{200B}\u{2064}55:₆6₆6:7777:8888\u{200B}",
+                nil
+            ),
+            /// Would parse to 2001:0DB8:85A3:F109:197A:8A2E:0370:7334 assuming IDNA-compliant parsing
+            (
+                "\u{200B}﹇₂₀\u{AD}\u{200B}₀₁︓\u{2064}₀ⒹⒷ₈︓₈₅Ⓐ₃\u{2064}︓Ⓕ₁₀₉︓₁₉₇Ⓐ︓₈Ⓐ₂Ⓔ︓₀₃₇₀︓₇₃₃₄﹈\u{2064}",
+                nil
+            ),
+            ("\u{AD}", nil),
+            ("\u{AD}\u{200B}\u{2064}", nil),
+            ("[\u{AD}]", nil),
+            ("[\u{AD}\u{200B}\u{2064}]", nil),
+            /// We should support parsing these next 4 as valid if we were to support IDNA-compliant parsing,
+            /// but we can skip them if necessary for performance.
+            /// If you remove the IDNA-ignored unicode scalars, it becomes clear they are valid.
+            ("[\u{AD}::]", nil),
+            ("[::\u{AD}]", nil),
+            ("[1:\u{AD}:1]", nil),
+            ("[1:\u{AD}\u{200B}:1]", nil),
         ])
     )
     /// Add failed tests with too many or too few parts, or not hexadecimal (negative or bad letters)
