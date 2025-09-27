@@ -191,6 +191,7 @@ extension IPv6Address: LosslessStringConvertible {
     /// Initialize an IPv6 address from its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
     public init?(_ description: String) {
         self.init(textualRepresentation: description.utf8Span)
@@ -199,6 +200,7 @@ extension IPv6Address: LosslessStringConvertible {
     /// Initialize an IPv6 address from its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
     public init?(_ description: Substring) {
         self.init(textualRepresentation: description.utf8Span)
@@ -207,6 +209,7 @@ extension IPv6Address: LosslessStringConvertible {
     /// Initialize an IPv6 address from a `UTF8Span` of its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
     public init?(textualRepresentation utf8Span: UTF8Span) {
         var utf8Span = utf8Span
@@ -223,6 +226,7 @@ extension IPv6Address {
     /// Initialize an IPv6 address from a `Span<UInt8>` of its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
         for idx in span.indices {
@@ -239,6 +243,7 @@ extension IPv6Address {
     /// The provided **span is required to be ASCII**.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
     public init?(__uncheckedASCIIspan span: Span<UInt8>) {
         debugOnly {
@@ -258,7 +263,9 @@ extension IPv6Address {
         var span = span
         var count = span.count
 
-        guard count > 1 else {
+        /// Longest possible ipv6 address is something like
+        /// [0000:0000:0000:0000:0000:ffff:111.111.111.111] which is only 47 bytes long.
+        guard count >= 2, count <= 47 else {
             return nil
         }
 
@@ -283,12 +290,107 @@ extension IPv6Address {
             return nil
         }
 
-        var groupIdx = 0
+        /// `UInt8` is fine, up there we made sure there are less than 50 elements in the span.
+        /// In an IPv6 address like `[0000:0000:0000:0000:0000:ffff:1.1.1.1]`,
+        /// we have 3 dots. This is the maximum amount of dots we can have.
+        let dotsIndicesPointer: UnsafeMutablePointer<UInt8> = .allocate(capacity: 3)
+        defer { dotsIndicesPointer.deallocate() }
+        var dotsIndicesCount = 0
+
+        /// `UInt8` is fine, up there we made sure there are less than 50 elements in the span.
+        /// In an IPv6 address like `[0:0:0:0:0:0:0:0]`,
+        /// we have 7 colons. This is the maximum amount of colons we can have.
+        let colonsIndicesPointer: UnsafeMutablePointer<UInt8> = .allocate(capacity: 7)
+        defer { colonsIndicesPointer.deallocate() }
+        var colonsIndicesCount = 0
+
+        for idx in span.indices {
+            switch span[unchecked: idx] {
+            case .asciiColon:
+                if colonsIndicesCount == 7 {
+                    /// Cannot have any more colons
+                    return nil
+                }
+                /// Unchecked because `idx` is guaranteed to be in range of `0...span.count`
+                /// And we checked above that span is less than 50 elements long.
+                colonsIndicesPointer[colonsIndicesCount] = UInt8(exactly: idx).unsafelyUnwrapped
+                colonsIndicesCount &+== 1
+            case .asciiDot:
+                if dotsIndicesCount == 3 {
+                    /// Cannot have any more dots
+                    return nil
+                }
+                /// Unchecked because `idx` is guaranteed to be in range of `0...span.count`
+                /// And we checked above that span is less than 50 elements long.
+                dotsIndicesPointer[dotsIndicesCount] = UInt8(exactly: idx).unsafelyUnwrapped
+                dotsIndicesCount &+== 1
+            default:
+                continue
+            }
+        }
+
+        guard colonsIndicesCount >= 2 else {
+            return nil
+        }
+        var ipv4MappedSegment: IPv4Address?
+
+        /// Make sure dots are either 0, or 3.
+        /// If 3, then make sure they are all on the left side of all colons.
+        /// Can happen in an IPv6 address like `[0000:0000:0000:0000:0000:ffff:1.1.1.1]`,
+        switch dotsIndicesCount {
+        case 0:
+            break
+        case 3:
+            /// We need at least 3 colons in a valid ipv4-mapped ipv6 address.
+            /// Like in `::FFFF:1.1.1.1`.
+            /// In `0:0:0:0:0:FFFF:1.1.1.1` we have 6 colons, which is max amount for
+            /// a valid ipv4-mapped ipv6 address.
+            guard colonsIndicesCount >= 3, colonsIndicesCount <= 6 else {
+                return nil
+            }
+            let rightmostColonIdx = colonsIndicesPointer[colonsIndicesCount &-- 1]
+            let leftmostDotIdx = dotsIndicesPointer[0]
+            /// In `::FFFF:1.1.1.1` for example, first dot index is bigger than the last colon index.
+            guard leftmostDotIdx > rightmostColonIdx else {
+                return nil
+            }
+            let intRightmostColonIdx = Int(rightmostColonIdx)
+            ipv4MappedSegment = IPv4Address(
+                __uncheckedASCIIspan: span.extracting(
+                    unchecked: intRightmostColonIdx &++ 1..<count
+                )
+            )
+            /// We must have a valid ipv4 mapped segment by now.
+            if ipv4MappedSegment == nil {
+                return nil
+            }
+            /// Set the span to only the left side of the ipv4 mapped segment.
+            /// This'll extract `::FFFF` from `::FFFF:1.1.1.1`.
+            span = span.extracting(unchecked: 0..<intRightmostColonIdx)
+            count = intRightmostColonIdx
+        default:
+            return nil
+        }
+
+        /// If we have an ipv4MappedSegment, we don't need to check the colons count.
+        /// Because the ipv4 decoding process already has done it.
+        if ipv4MappedSegment == nil {
+            guard colonsIndicesCount >= 2 else {
+                return nil
+            }
+        }
+
         /// Have seen '::' or not
         var seenCompressionSign = false
 
-        while let nextSeparatorIdx = span.firstIndex(where: { $0 == .asciiColon }) {
-            let asciiGroup = span.extracting(unchecked: 0..<nextSeparatorIdx)
+        var segmentStartIdx = 0
+
+        var groupIdx = 0
+        while groupIdx < colonsIndicesCount {
+            let nextSeparatorIdx = Int(colonsIndicesPointer[groupIdx])
+
+            let asciiGroup = span.extracting(unchecked: segmentStartIdx..<nextSeparatorIdx)
+
             if asciiGroup.isEmpty {
                 if seenCompressionSign {
                     /// We've already seen a compression sign, so this is invalid
@@ -307,14 +409,11 @@ extension IPv6Address {
                     seenCompressionSign = true
                     /// Unchecked because it can't exceed `span.count` anyway
                     groupIdx &+== 2
-                    span = span.extracting(unchecked: (nextIdx &++ 1)..<span.count)
+                    segmentStartIdx = nextSeparatorIdx &++ 2
                     continue
 
                     /// If we're at the last index
-                } else if span.count == 1 {
-                    guard groupIdx <= 7 else {
-                        return nil
-                    }
+                } else if (segmentStartIdx &++ 1) == count {
                     /// Must have reached end with no rhs
                     self.init(addressLhs)
                     return
@@ -328,7 +427,7 @@ extension IPv6Address {
                     seenCompressionSign = true
                     /// Unchecked because it can't exceed `span.count` anyway
                     groupIdx &+== 1
-                    span = span.extracting(unchecked: (nextSeparatorIdx &++ 1)..<span.count)
+                    segmentStartIdx = nextSeparatorIdx &++ 1
                     continue
                 }
             }
@@ -345,26 +444,47 @@ extension IPv6Address {
                 return nil
             }
 
-            /// This is safe, nothing will crash with this increase in index
-            /// Unchecked because it can't exceed `span.count` anyway
-            span = span.extracting((nextSeparatorIdx &++ 1)...)
-
             groupIdx &+== 1
-        }
-
-        guard groupIdx <= 7 else {
-            return nil
+            segmentStartIdx = nextSeparatorIdx &++ 1
         }
 
         /// Read last remaining byte-pair
-        if span.isEmpty {
+        if segmentStartIdx >= count {
             if seenCompressionSign {
-                /// Must have reached end with no rhs
-                self.init(addressLhs)
-                return
+                if let ipv4MappedSegment {
+                    /// Unchecked because `3 <= groupIdx <= 6` based on the check for a valid
+                    /// ipv4-mapped ipv6 address.
+                    /// So this number is guaranteed to be in range of `0...6`
+                    let compressedGroupsCount = 8 &-- groupIdx &-- 2
+                    /// Unchecked because `compressedGroupsCount` is guaranteed to be in range of `0...7`
+                    let shift = 16 &** compressedGroupsCount
+                    /// Unchecked because `shift` is guaranteed to be in range of `0...128`
+                    addressLhs |= addressRhs &>>> shift
+                    addressLhs |= UInt128(ipv4MappedSegment.address)
+
+                    self.init(addressLhs)
+                    guard CIDR<IPv6Address>.ipv4Mapped.contains(self) else {
+                        return nil
+                    }
+                    return
+                } else {
+                    /// Must have reached end with no rhs
+                    self.init(addressLhs)
+                    return
+                }
             } else {
-                /// No compression sign, but still have an empty group?!
-                return nil
+                if groupIdx == 6,
+                    let ipv4MappedSegment
+                {
+                    self.init(addressLhs | UInt128(ipv4MappedSegment.address))
+                    guard CIDR<IPv6Address>.ipv4Mapped.contains(self) else {
+                        return nil
+                    }
+                    return
+                } else {
+                    /// No compression sign, but still have an empty group?!
+                    return nil
+                }
             }
         }
 
@@ -372,16 +492,16 @@ extension IPv6Address {
             IPv6Address._readIPv6Group(
                 addressLhs: &addressLhs,
                 addressRhs: &addressRhs,
-                textualRepresentation: span,
+                textualRepresentation: span.extracting(unchecked: segmentStartIdx..<count),
                 seenCompressionSign: seenCompressionSign,
-                groupIdx: groupIdx
+                groupIdx: colonsIndicesCount
             )
         else {
             return nil
         }
 
         /// We've reached the end of the string
-        guard groupIdx == 7 || seenCompressionSign else {
+        guard colonsIndicesCount == 7 || seenCompressionSign else {
             return nil
         }
 
